@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const { MONGO_URI, PORT, CLIENT_ORIGIN } = require("./config/config");
 
 dotenv.config();
 const app = express();
@@ -11,16 +12,19 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: CLIENT_ORIGIN,
   credentials: true
 }));
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/notes', require('./routes/noteRoutes'));
 
-// Connect DB & Start Server
-mongoose.connect(process.env.MONGO_URI)
+// Database Connection & Server Start
+mongoose.connect(MONGO_URI)
   .then(() => {
-    app.listen(5000, () => console.log("Server running on http://localhost:5000"));
+    app.listen(PORT, () =>
+      console.log(`Server running at http://localhost:${PORT}`)
+    );
   })
-  .catch(err => console.error(err));
+  .catch((err) => console.error("MongoDB Connection Error:", err));
