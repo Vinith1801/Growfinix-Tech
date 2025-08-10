@@ -2,10 +2,11 @@ const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authController");
 const verifyToken = require("../middleware/authMiddleware");
+const authLimiter = require('../middleware/rateLimiter');
 
 // Auth Routes
-router.post("/signup", authController.signup);
-router.post("/login", authController.login);
+router.post("/signup", authLimiter , authController.signup);
+router.post("/login", authLimiter , authController.login);
 router.post("/logout", authController.logout);
 
 // Get current user
