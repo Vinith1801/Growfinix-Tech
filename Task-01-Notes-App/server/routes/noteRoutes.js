@@ -21,10 +21,22 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
-// Get All Notes (user-specific)
+// Get All Notes (user-specific) with optional tag filtering
 router.get("/", auth, async (req, res) => {
   try {
-    const notes = await Note.find({ owner: req.user.id }).sort({ updatedAt: -1 });
+    const { tags } = req.query;
+    const query = { owner: req.user.id };
+
+    if (tags) {
+      const tagList = tags.split(",").map(t => t.trim()).filter(Boolean);
+      if (tagList.length > 0) {
+        query.$and = tagList.map(tag => ({
+          tags: { $elemMatch: { $regex: new RegExp(`^${tag}$`, 'i') } }
+        }));
+      }
+    }
+
+    const notes = await Note.find(query).sort({ updatedAt: -1 });
     res.json(notes);
   } catch (err) {
     res.status(500).json({ msg: "Failed to fetch notes" });

@@ -1,8 +1,9 @@
 // client/src/api/noteApi.js
 import api from "./api";
 
-export const getNotes = async () => {
-  const res = await api.get("/notes", { withCredentials: true });
+export const getNotes = async (tags = "") => {
+  const params = tags ? { tags } : {};
+  const res = await api.get("/notes", { params, withCredentials: true });
   return res.data;
 };
 

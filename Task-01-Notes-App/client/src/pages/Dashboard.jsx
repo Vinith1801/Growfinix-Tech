@@ -3,28 +3,45 @@ import { getNotes, createNote, updateNote, deleteNote } from "../api/noteApi";
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import NoteEditor from "../components/NoteEditor";
 import { useAuth } from "../auth/AuthContext";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
+
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 export default function Dashboard() {
   const [notes, setNotes] = useState([]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
+  const [filterTags, setFilterTags] = useState("");
 
-  const { user, loading } = useAuth(); // get auth state
+  const { user, loading } = useAuth();
+
+  const debouncedFilterTags = useDebounce(filterTags, 400);
 
   useEffect(() => {
-    if (loading) return; // don't run until auth is ready
-    if (!user) return;   // no user → no notes
+    if (loading) return;
+    if (!user) return;
 
     (async () => {
       try {
-        const data = await getNotes();
+        const data = await getNotes(debouncedFilterTags);
         setNotes(Array.isArray(data) ? data : data?.notes || []);
       } catch (err) {
         console.error(err);
         setNotes([]);
       }
     })();
-  }, [loading, user]); // re-run when auth finishes
+  }, [loading, user, debouncedFilterTags]);
 
   const handleSave = async (data) => {
     try {
@@ -62,49 +79,88 @@ export default function Dashboard() {
           </button>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {notes.map(note => (
-            <div
-              key={note._id}
-              className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-xl shadow-sm p-4 flex flex-col justify-between"
+        {/* Filter Input and Clear Button */}
+        <div className="mb-6 flex items-center gap-2 max-w-sm">
+          <input
+            type="text"
+            placeholder="Filter by tags (comma separated)"
+            value={filterTags}
+            onChange={(e) => setFilterTags(e.target.value)}
+            className="flex-grow px-4 py-2 rounded border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
+          />
+          {filterTags && (
+            <button
+              onClick={() => setFilterTags("")}
+              className="px-3 py-2 bg-gray-300 dark:bg-gray-700 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition text-gray-700 dark:text-gray-200"
+              aria-label="Clear filter"
             >
-              <div>
-                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                  {note.title}
-                </h2>
-                <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
-                  {note.content}
-                </p>
-                {note.tags.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {note.tags.map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full text-xs"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2 mt-4">
-                <button
-                  onClick={() => { setEditingNote(note); setEditorOpen(true); }}
-                  className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                >
-                  <PencilIcon className="w-5 h-5 text-yellow-500" />
-                </button>
-                <button
-                  onClick={() => deleteNote(note._id).then(() => setNotes(notes.filter(n => n._id !== note._id)))}
-                  className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                >
-                  <TrashIcon className="w-5 h-5 text-red-500" />
-                </button>
-              </div>
-            </div>
-          ))}
+              Clear
+            </button>
+          )}
         </div>
+
+        {/* Notes Grid or Empty State */}
+        {notes.length === 0 ? (
+          <p className="text-center text-gray-500 dark:text-gray-400 mt-10">
+            No notes found for the specified tags.
+          </p>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {notes.map(note => (
+              <div
+                key={note._id}
+                className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md rounded-xl shadow-sm p-4 flex flex-col justify-between"
+              >
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                    {note.title}
+                  </h2>
+                  <div className="prose max-w-none text-gray-700 dark:text-gray-300 mt-2">
+  <ReactMarkdown
+    remarkPlugins={[remarkGfm]}
+    rehypePlugins={[rehypeSanitize]}
+  >
+    {note.content}
+  </ReactMarkdown>
+</div>
+
+                  {note.tags.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {note.tags.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full text-xs"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => { setEditingNote(note); setEditorOpen(true); }}
+                    className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                    aria-label="Edit note"
+                  >
+                    <PencilIcon className="w-5 h-5 text-yellow-500" />
+                  </button>
+                  <button
+                    onClick={() =>
+                      deleteNote(note._id).then(() =>
+                        setNotes(notes.filter(n => n._id !== note._id))
+                      )
+                    }
+                    className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                    aria-label="Delete note"
+                  >
+                    <TrashIcon className="w-5 h-5 text-red-500" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {editorOpen && (
