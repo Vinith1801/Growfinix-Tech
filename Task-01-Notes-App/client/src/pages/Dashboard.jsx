@@ -6,6 +6,7 @@ import { useAuth } from "../auth/AuthContext";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
+import toast from "react-hot-toast";
 
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -23,9 +24,7 @@ export default function Dashboard() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
   const [filterTags, setFilterTags] = useState("");
-
   const { user, loading } = useAuth();
-
   const debouncedFilterTags = useDebounce(filterTags, 400);
 
   useEffect(() => {
@@ -38,6 +37,7 @@ export default function Dashboard() {
         setNotes(Array.isArray(data) ? data : data?.notes || []);
       } catch (err) {
         console.error(err);
+        toast.error("Failed to load notes");
         setNotes([]);
       }
     })();
@@ -48,17 +48,33 @@ export default function Dashboard() {
       if (editingNote) {
         const updated = await updateNote(editingNote._id, data);
         setNotes(notes.map(n => (n._id === editingNote._id ? updated : n)));
+        toast.success("Note updated");
       } else {
         const newNote = await createNote(data);
         setNotes([newNote, ...notes]);
+        toast.success("Note created");
       }
     } catch (err) {
       console.error(err);
+      toast.error(err?.response?.data?.msg || "Save failed");
     } finally {
       setEditorOpen(false);
       setEditingNote(null);
     }
   };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this note?")) return;
+    try {
+      await deleteNote(id);
+      setNotes(notes.filter(n => n._id !== id));
+      toast.success("Note deleted");
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.msg || "Delete failed");
+    }
+  };
+
 
   if (loading) {
     return <div className="p-8 text-center text-gray-600">Loading...</div>;
@@ -116,13 +132,13 @@ export default function Dashboard() {
                     {note.title}
                   </h2>
                   <div className="prose max-w-none text-gray-700 dark:text-gray-300 mt-2">
-  <ReactMarkdown
-    remarkPlugins={[remarkGfm]}
-    rehypePlugins={[rehypeSanitize]}
-  >
-    {note.content}
-  </ReactMarkdown>
-</div>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeSanitize]}
+                    >
+                      {note.content}
+                    </ReactMarkdown>
+                  </div>
 
                   {note.tags.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-1.5">
@@ -147,7 +163,7 @@ export default function Dashboard() {
                   </button>
                   <button
                     onClick={() =>
-                      deleteNote(note._id).then(() =>
+                      handleDelete(note._id).then(() =>
                         setNotes(notes.filter(n => n._id !== note._id))
                       )
                     }

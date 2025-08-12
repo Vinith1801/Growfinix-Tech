@@ -30,8 +30,8 @@ router.get("/", auth, async (req, res) => {
     if (tags) {
       const tagList = tags.split(",").map(t => t.trim()).filter(Boolean);
       if (tagList.length > 0) {
-        query.$and = tagList.map(tag => ({
-          tags: { $elemMatch: { $regex: new RegExp(`^${tag}$`, 'i') } }
+        query.$or = tagList.map(tag => ({
+          tags: { $elemMatch: { $regex: new RegExp(tag, 'i') } }
         }));
       }
     }

@@ -12,6 +12,7 @@ router.post("/logout", authController.logout);
 // Get current user
 router.get("/me", verifyToken, authController.getMe);
 router.put("/me", verifyToken, authController.updateMe);
+router.post("/verify-password", verifyToken, authController.verifyPassword);
 
 
 module.exports = router;

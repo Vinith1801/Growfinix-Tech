@@ -80,16 +80,26 @@ exports.logout = (req, res) => {
 exports.updateMe = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { username, email, password } = req.body;
+    const { username, email, password, currentPassword } = req.body;
 
-    // Find user
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ msg: "User not found" });
 
-    // Update fields if present
+    // Update username & email directly
     if (username) user.username = username;
     if (email) user.email = email;
+
+    // Handle password change
     if (password) {
+      if (!currentPassword) {
+        return res.status(400).json({ msg: "Current password is required" });
+      }
+
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(401).json({ msg: "Current password is incorrect" });
+      }
+
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(password, salt);
     }
@@ -100,5 +110,29 @@ exports.updateMe = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ msg: "Failed to update profile" });
+  }
+};
+
+exports.verifyPassword = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { currentPassword } = req.body;
+
+    if (!currentPassword) {
+      return res.status(400).json({ msg: "Current password is required" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ msg: "Incorrect current password" });
+    }
+
+    res.json({ msg: "Password verified" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
   }
 };
