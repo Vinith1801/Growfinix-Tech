@@ -1,31 +1,60 @@
 import { useTheme } from "../theme/ThemeContext";
 import { SunIcon, MoonIcon } from "@heroicons/react/24/solid";
+import { useState } from "react";
 
-export default function DarkModeToggle({ className = "", label = false }) {
+export default function DarkModeToggle() {
   const { theme, toggleTheme } = useTheme();
+  const [checked, setChecked] = useState(theme === "dark");
+
+  const handleToggle = () => {
+    toggleTheme();
+    setChecked(!checked);
+  };
 
   return (
-    <button
-      onClick={toggleTheme}
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-full 
-                 bg-gray-100 dark:bg-gray-700 
-                 text-gray-700 dark:text-gray-200 
-                 shadow-sm hover:shadow-md hover:bg-gray-200 
-                 dark:hover:bg-gray-600 transition-all duration-200
-                 focus:outline-none focus:ring-2 focus:ring-blue-400 ${className}`}
-      aria-label="Toggle dark mode"
-    >
-      {theme === "dark" ? (
-        <>
-          <SunIcon className="w-5 h-5" />
-          {label && <span className="text-sm font-medium">Light</span>}
-        </>
-      ) : (
-        <>
-          <MoonIcon className="w-5 h-5" />
-          {label && <span className="text-sm font-medium">Dark</span>}
-        </>
-      )}
-    </button>
+    <label className="inline-flex items-center relative cursor-pointer select-none">
+  {/* Hidden checkbox */}
+  <input
+    type="checkbox"
+    className="peer hidden"
+    checked={checked}
+    onChange={handleToggle}
+  />
+
+  {/* Slider background */}
+  <div
+    className={`
+      relative w-[70px] h-[35px] rounded-full
+      bg-white dark:bg-gray-800
+      peer-checked:bg-gray-700
+      shadow-sm transition-colors duration-300
+      after:absolute after:content-[''] after:w-[25px] after:h-[25px]
+      after:rounded-full after:top-[5px] after:left-[5px]
+      after:bg-gradient-to-r from-yellow-400 to-orange-500
+      peer-checked:after:from-gray-900 peer-checked:after:to-gray-900
+      peer-checked:after:left-[40px]
+      after:shadow-md after:transition-all after:duration-300
+    `}
+  ></div>
+
+  {/* Sun Icon */}
+  <SunIcon
+    className={`
+      absolute w-4 h-4 left-[8px] text-yellow-400
+      peer-checked:text-gray-300
+      transition-all duration-300
+    `}
+  />
+
+  {/* Moon Icon */}
+  <MoonIcon
+    className={`
+      absolute w-4 h-4 right-[8px] text-gray-700
+      peer-checked:text-white
+      transition-all duration-300
+    `}
+  />
+</label>
+
   );
 }

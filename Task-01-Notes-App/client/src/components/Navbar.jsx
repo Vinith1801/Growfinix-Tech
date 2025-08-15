@@ -18,40 +18,48 @@ export default function Navbar() {
 
   const baseButtonClasses = `
     text-sm font-medium
-    transition-colors duration-200
-    rounded
+    transition-all duration-200
+    rounded-md
+    focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500
+    px-3 py-1
   `;
 
   const linkButtonClasses = `
-    ${baseButtonClasses} 
-    hover:underline 
+    ${baseButtonClasses}
     cursor-pointer
+    hover:underline
   `;
 
   return (
     <nav
       aria-label="Primary navigation"
-      className="fixed top-4 left-1/2 -translate-x-1/2
-                 w-[90%] max-w-4xl h-10
-                 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md
-                 rounded-full shadow-sm border border-gray-200 dark:border-gray-700
-                 flex items-center justify-between px-4 z-50"
+      className="
+        fixed top-4 left-1/2 -translate-x-1/2
+        w-[90%] max-w-4xl h-12
+        bg-white/80 dark:bg-gray-900/80 backdrop-blur-md
+        rounded-full shadow-md border border-gray-200 dark:border-gray-700
+        flex items-center justify-between px-5 z-50
+      "
     >
       <h1
         tabIndex={0}
         role="button"
         onClick={() => navigate("/")}
         onKeyDown={(e) => e.key === "Enter" && navigate("/")}
-        className="text-sm font-semibold tracking-wide
-                   text-gray-900 dark:text-gray-100
-                   cursor-pointer select-none
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 rounded"
+        className="
+          text-sm font-semibold tracking-wide
+          text-gray-900 dark:text-gray-100
+          cursor-pointer select-none
+          focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 rounded
+          transition-colors duration-200
+          hover:text-blue-600 dark:hover:text-blue-400
+        "
         aria-label="Navigate to home"
       >
         Notes
       </h1>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 md:gap-4">
         {!user ? (
           <>
             <button
