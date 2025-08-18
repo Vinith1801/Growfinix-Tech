@@ -1,110 +1,145 @@
-import React from "react";
-import { useAuth } from "../auth/AuthContext";
-import { useNavigate } from "react-router-dom";
-import DarkModeToggle from "../components/DarkModeToggle";
+// src/components/Navbar.jsx
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import DarkModeToggle from "./DarkModeToggle";
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate("/");
-    } catch (error) {
-      console.error("Logout failed", error);
-    }
-  };
-
-  const baseButtonClasses = `
-    text-sm font-medium
-    transition-all duration-200
-    rounded-md
-    focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-500
-    px-3 py-1
-  `;
-
-  const linkButtonClasses = `
-    ${baseButtonClasses}
-    cursor-pointer
-    hover:underline
-  `;
+  const navLinks = [
+    { name: "Home", path: "/" },
+    { name: "Profile", path: "/profile" },
+    { name: "Dashboard", path: "/dashboard" },
+  ];
 
   return (
-    <nav
-      aria-label="Primary navigation"
-      className="
-        fixed top-4 left-1/2 -translate-x-1/2
-        w-[90%] max-w-4xl h-12
-        bg-white/80 dark:bg-gray-900/80 backdrop-blur-md
-        rounded-full shadow-md border border-gray-200 dark:border-gray-700
-        flex items-center justify-between px-5 z-50
-      "
+    <motion.nav
+      initial={{ y: -80, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="fixed top-0 left-0 w-full z-50 backdrop-blur-lg bg-white/30 dark:bg-black/30 border-b border-white/20 dark:border-gray-800/40 shadow-sm"
     >
-      <h1
-        tabIndex={0}
-        role="button"
-        onClick={() => navigate("/")}
-        onKeyDown={(e) => e.key === "Enter" && navigate("/")}
-        className="
-          text-sm font-semibold tracking-wide
-          text-gray-900 dark:text-gray-100
-          cursor-pointer select-none
-          focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 rounded
-          transition-colors duration-200
-          hover:text-blue-600 dark:hover:text-blue-400
-        "
-        aria-label="Navigate to home"
-      >
-        Notes
-      </h1>
+      <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
+        
+        {/* Logo */}
+        <Link
+          to="/"
+          className="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent hover:scale-105 transition-transform"
+        >
+          Growfinix Notes
+        </Link>
 
-      <div className="flex items-center gap-3 md:gap-4">
-        {!user ? (
-          <>
-            <button
-              type="button"
-              onClick={() => navigate("/login")}
-              className={`${linkButtonClasses} text-gray-700 dark:text-gray-300`}
+        {/* Desktop Links */}
+        <div className="hidden md:flex items-center gap-6">
+          {navLinks.map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              className={`relative text-sm font-medium transition-colors duration-300 ${
+                location.pathname === link.path
+                  ? "text-indigo-600 dark:text-indigo-400"
+                  : "text-gray-700 dark:text-gray-300"
+              } hover:text-indigo-500 dark:hover:text-indigo-400`}
+            >
+              {link.name}
+              {location.pathname === link.path && (
+                <motion.span
+                  layoutId="navbar-underline"
+                  className="absolute left-0 -bottom-1 h-[2px] w-full bg-indigo-500 rounded-full"
+                />
+              )}
+            </Link>
+          ))}
+
+          {/* Auth Buttons */}
+          <div className="flex items-center gap-4">
+            <Link
+              to="/login"
+              className="px-4 py-2 text-sm font-medium rounded-xl border dark:text-white border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
             >
               Login
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/signup")}
-              className={`${linkButtonClasses} text-blue-600 dark:text-blue-400`}
+            </Link>
+            <Link
+              to="/signup"
+              className="px-4 py-2 text-sm font-medium rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 shadow-md transition"
             >
-              Signup
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className={`${linkButtonClasses} text-red-600 dark:text-red-400`}
-            >
-              Logout
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/profile")}
-              className={`${linkButtonClasses} text-blue-600 dark:text-blue-400`}
-            >
-              Profile
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/")}
-              className={`${linkButtonClasses} text-blue-600 dark:text-blue-400`}
-            >
-              Home
-            </button>
-          </>
-        )}
+              Sign Up
+            </Link>
+          </div>
 
-        <DarkModeToggle className="p-1 rounded-md" label />
+          {/* Dark mode toggle */}
+          <DarkModeToggle />
+        </div>
+
+        {/* Mobile Hamburger */}
+        <div className="md:hidden">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="p-2 rounded-md focus:outline-none"
+          >
+            {menuOpen ? (
+              <XMarkIcon className="w-7 h-7 text-gray-700 dark:text-gray-200" />
+            ) : (
+              <Bars3Icon className="w-7 h-7 text-gray-700 dark:text-gray-200" />
+            )}
+          </button>
+        </div>
       </div>
-    </nav>
+
+      {/* Mobile Dropdown Menu */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden px-6 pt-4 pb-6 bg-white/70 dark:bg-black/70 backdrop-blur-lg border-t border-gray-200 dark:border-gray-700"
+          >
+            <div className="flex flex-col gap-4">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setMenuOpen(false)}
+                  className={`text-base font-medium transition-colors ${
+                    location.pathname === link.path
+                      ? "text-indigo-600 dark:text-indigo-400"
+                      : "text-gray-700 dark:text-gray-300"
+                  } hover:text-indigo-500 dark:hover:text-indigo-400`}
+                >
+                  {link.name}
+                </Link>
+              ))}
+
+              <div className="flex flex-col gap-3 mt-4">
+                <Link
+                  to="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="w-full text-center px-4 py-2 text-sm font-medium rounded-xl border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  onClick={() => setMenuOpen(false)}
+                  className="w-full text-center px-4 py-2 text-sm font-medium rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 shadow-md transition"
+                >
+                  Sign Up
+                </Link>
+              </div>
+
+              {/* Dark mode toggle */}
+              <div className="mt-3">
+                <DarkModeToggle />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.nav>
   );
 }

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { getNotes, createNote, updateNote, deleteNote } from "../api/noteApi";
-import { PencilIcon, TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, TrashIcon, PlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import NoteEditor from "../components/NoteEditor";
 import { useAuth } from "../auth/AuthContext";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -84,92 +85,102 @@ export default function Dashboard() {
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">
             My Notes
           </h1>
           <button
             onClick={() => { setEditingNote(null); setEditorOpen(true); }}
-            className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow-lg transition transform hover:-translate-y-0.5"
           >
             <PlusIcon className="w-5 h-5" /> New Note
           </button>
         </div>
 
         {/* Filter Input */}
-        <div className="flex gap-2 flex-wrap items-center max-w-md">
+        <div className="relative max-w-md w-full">
           <input
             type="text"
             placeholder="Filter by tags (comma separated)"
             value={filterTags}
             onChange={(e) => setFilterTags(e.target.value)}
-            className="flex-grow px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 transition"
+            className="peer w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md transition"
           />
           {filterTags && (
             <button
               onClick={() => setFilterTags("")}
-              className="px-3 py-2 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition text-gray-700 dark:text-gray-200"
+              className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               aria-label="Clear filter"
             >
-              Clear
+              <XMarkIcon className="w-5 h-5" />
             </button>
           )}
         </div>
 
         {/* Notes Grid */}
         {notes.length === 0 ? (
-          <p className="text-center text-gray-500 dark:text-gray-400 mt-10">
-            No notes found for the specified tags.
-          </p>
+          <div className="text-center mt-12">
+            <p className="text-gray-500 dark:text-gray-400 text-lg">No notes found.</p>
+          </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {notes.map(note => (
-              <div
-                key={note._id}
-                className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-md p-5 flex flex-col justify-between transition hover:shadow-xl hover:-translate-y-1"
-              >
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
-                    {note.title || "Untitled"}
-                  </h2>
-                  <div className="prose max-w-none mt-2 text-gray-700 dark:text-gray-300 break-words">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
-                      {note.content || "_No content_"}
-                    </ReactMarkdown>
+          <motion.div 
+            layout 
+            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            <AnimatePresence>
+              {notes.map(note => (
+                <motion.div
+                  key={note._id}
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-lg p-6 flex flex-col justify-between hover:shadow-2xl hover:-translate-y-1 transition"
+                >
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      {note.title || "Untitled"}
+                    </h2>
+                    <div className="prose prose-sm max-w-none mt-3 text-gray-700 dark:text-gray-300 break-words">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+                        {note.content || "_No content_"}
+                      </ReactMarkdown>
+                    </div>
+
+                    {note.tags?.length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {note.tags.map((tag, idx) => (
+                          <span
+                            key={idx}
+                            className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-medium"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {note.tags?.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {note.tags.map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full text-xs"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-2 mt-4 justify-end">
-                  <button
-                    onClick={() => { setEditingNote(note); setEditorOpen(true); }}
-                    className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                    aria-label="Edit note"
-                  >
-                    <PencilIcon className="w-5 h-5 text-yellow-500" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(note._id)}
-                    className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                    aria-label="Delete note"
-                  >
-                    <TrashIcon className="w-5 h-5 text-red-500" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+                  <div className="flex gap-2 mt-5 justify-end">
+                    <button
+                      onClick={() => { setEditingNote(note); setEditorOpen(true); }}
+                      className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                      aria-label="Edit note"
+                    >
+                      <PencilIcon className="w-5 h-5 text-yellow-500" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(note._id)}
+                      className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+                      aria-label="Delete note"
+                    >
+                      <TrashIcon className="w-5 h-5 text-red-500" />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
       </div>
 

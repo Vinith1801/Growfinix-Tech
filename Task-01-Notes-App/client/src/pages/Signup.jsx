@@ -4,39 +4,29 @@ import { useTheme } from "../theme/ThemeContext";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
+import { validateSignup, getPasswordStrength } from "../utils/validators";
 
 export default function Signup() {
   const { signup } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [form, setForm] = useState({ email: "", password: "", confirm: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const validate = () => {
-    const newErrors = {};
-    if (!email) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = "Enter a valid email";
-
-    if (!password) newErrors.password = "Password is required";
-    else if (password.length < 6) newErrors.password = "Password must be at least 6 characters";
-
-    if (confirm !== password) newErrors.confirm = "Passwords do not match";
-    return newErrors;
+  const handleChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setErrors(validateSignup({ ...form, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors({});
     setServerError("");
-
-    const validationErrors = validate();
+    const validationErrors = validateSignup(form);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -44,7 +34,7 @@ export default function Signup() {
 
     try {
       setLoading(true);
-      const res = await signup(email.trim(), password);
+      const res = await signup(form.email.trim(), form.password);
       if (!res || !res.success) {
         const msg = res?.message || "Signup failed";
         setServerError(msg);
@@ -62,15 +52,14 @@ export default function Signup() {
     }
   };
 
-  const renderPasswordInput = (id, value, onChange, show, setShow, error, label) => (
+  const renderPasswordInput = (id, value, field, show, setShow, error, label) => (
     <div className="relative w-full">
       <input
         type={show ? "text" : "password"}
         id={id}
         autoComplete="new-password"
         value={value}
-        onChange={onChange}
-        onBlur={() => setErrors(validate())}
+        onChange={(e) => handleChange(field, e.target.value)}
         placeholder=" "
         className={`peer block w-full border-b-2 py-2 px-0 bg-transparent text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-600 transition ${
           error ? "border-red-500 focus:border-red-600" : "border-gray-300 dark:border-gray-600"
@@ -88,7 +77,6 @@ export default function Signup() {
         type="button"
         onClick={() => setShow(!show)}
         className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none"
-        tabIndex={0}
         aria-label={show ? `Hide ${label}` : `Show ${label}`}
       >
         {show ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
@@ -96,6 +84,8 @@ export default function Signup() {
       {error && <p className="mt-1 text-sm text-red-600" id={`${id}-error`}>{error}</p>}
     </div>
   );
+
+  const passwordStrength = getPasswordStrength(form.password);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 px-4 py-12 overflow-hidden">
@@ -111,7 +101,7 @@ export default function Signup() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 text-center mb-6">Sign Up</h1>
 
         {serverError && (
-          <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded text-sm animate-fade-in" role="alert" aria-live="polite">
+          <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded text-sm animate-fade-in" role="alert">
             {serverError}
           </div>
         )}
@@ -122,9 +112,8 @@ export default function Signup() {
             type="email"
             id="email"
             autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onBlur={() => setErrors(validate())}
+            value={form.email}
+            onChange={(e) => handleChange("email", e.target.value)}
             placeholder=" "
             className={`peer block w-full border-b-2 py-2 px-0 bg-transparent text-gray-900 dark:text-gray-100 focus:outline-none focus:border-blue-600 transition ${
               errors.email ? "border-red-500 focus:border-red-600" : "border-gray-300 dark:border-gray-600"
@@ -139,24 +128,35 @@ export default function Signup() {
         </div>
 
         {/* Password */}
-        {renderPasswordInput("password", password, (e) => setPassword(e.target.value), showPassword, setShowPassword, errors.password, "Password")}
+        {renderPasswordInput("password", form.password, "password", showPassword, setShowPassword, errors.password, "Password")}
+
+        {/* Password strength meter */}
+        {form.password && (
+          <p className={`text-sm ${
+            passwordStrength === "Strong"
+              ? "text-green-600"
+              : passwordStrength === "Medium"
+              ? "text-yellow-600"
+              : "text-red-600"
+          }`}>
+            Password strength: {passwordStrength}
+          </p>
+        )}
 
         {/* Confirm Password */}
-        {renderPasswordInput("confirm", confirm, (e) => setConfirm(e.target.value), showConfirm, setShowConfirm, errors.confirm, "Confirm Password")}
+        {renderPasswordInput("confirm", form.confirm, "confirm", showConfirm, setShowConfirm, errors.confirm, "Confirm Password")}
 
         <button
           type="submit"
-          disabled={loading}
-          className="w-full py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 dark:active:bg-blue-900 text-white font-medium rounded-xl shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={loading || Object.keys(errors).length > 0}
+          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Signing up..." : "Sign Up"}
         </button>
 
         <p className="text-center text-gray-600 dark:text-gray-300 text-sm mt-4">
           Already have an account?{" "}
-          <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline transition">
-            Sign in
-          </Link>
+          <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">Sign in</Link>
         </p>
       </form>
     </div>
