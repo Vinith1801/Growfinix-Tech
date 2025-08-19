@@ -4,14 +4,16 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import DarkModeToggle from "./DarkModeToggle";
+import UserMenu from "./UserMenu"; // 👈 new dropdown component
+import { useAuth } from "../auth/AuthContext";
 
 export default function Navbar() {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   const navLinks = [
     { name: "Home", path: "/" },
-    { name: "Profile", path: "/profile" },
     { name: "Dashboard", path: "/dashboard" },
   ];
 
@@ -54,20 +56,26 @@ export default function Navbar() {
             </Link>
           ))}
 
-          {/* Auth Buttons */}
+          {/* Auth / User */}
           <div className="flex items-center gap-4">
-            <Link
-              to="/login"
-              className="px-4 py-2 text-sm font-medium rounded-xl border dark:text-white border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-            >
-              Login
-            </Link>
-            <Link
-              to="/signup"
-              className="px-4 py-2 text-sm font-medium rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 shadow-md transition"
-            >
-              Sign Up
-            </Link>
+            {user ? (
+              <UserMenu /> // 👈 avatar dropdown replaces Profile+Logout
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="px-4 py-2 text-sm font-medium rounded-xl border dark:text-white border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  className="px-4 py-2 text-sm font-medium rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 shadow-md transition"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Dark mode toggle */}
@@ -116,20 +124,43 @@ export default function Navbar() {
               ))}
 
               <div className="flex flex-col gap-3 mt-4">
-                <Link
-                  to="/login"
-                  onClick={() => setMenuOpen(false)}
-                  className="w-full text-center px-4 py-2 text-sm font-medium rounded-xl border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/signup"
-                  onClick={() => setMenuOpen(false)}
-                  className="w-full text-center px-4 py-2 text-sm font-medium rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 shadow-md transition"
-                >
-                  Sign Up
-                </Link>
+                {user ? (
+                  <>
+                    <Link
+                      to="/profile"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full text-center px-4 py-2 text-sm font-medium rounded-xl border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                    >
+                      Profile
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setMenuOpen(false);
+                      }}
+                      className="w-full text-center px-4 py-2 text-sm font-medium rounded-xl bg-gradient-to-r from-red-500 to-pink-600 text-white hover:opacity-90 shadow-md transition"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full text-center px-4 py-2 text-sm font-medium rounded-xl border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      to="/signup"
+                      onClick={() => setMenuOpen(false)}
+                      className="w-full text-center px-4 py-2 text-sm font-medium rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 shadow-md transition"
+                    >
+                      Sign Up
+                    </Link>
+                  </>
+                )}
               </div>
 
               {/* Dark mode toggle */}

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../api/api"; // axios instance with auth cookies
+import { EyeIcon, EyeSlashIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 
 export default function Profile() {
   const { user, loading } = useAuth();
@@ -16,6 +17,9 @@ export default function Profile() {
   const [error, setError] = useState(null);
   const [passwordVerified, setPasswordVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -69,11 +73,12 @@ export default function Profile() {
     }
 
     try {
-      const { username, email, password } = form;
+      const { username, email, password, currentPassword } = form;
       await api.put("/auth/me", {
         username,
         email,
         password: isChangingPassword ? password : undefined,
+        currentPassword: isChangingPassword ? currentPassword : undefined,
       });
       setMessage("🎉 Profile updated successfully!");
       setForm((f) => ({
@@ -156,22 +161,32 @@ export default function Profile() {
         {/* Current Password */}
         <div className="relative z-0 w-full group mt-6">
           <input
-            type="password"
+            type={showCurrent ? "text" : "password"}
             name="currentPassword"
             id="currentPassword"
             value={form.currentPassword}
             onChange={handleChange}
             placeholder=" "
-            className="peer block py-3 px-0 w-full text-gray-900 dark:text-gray-100 bg-transparent border-0 border-b-2 border-gray-300 dark:border-gray-600 appearance-none focus:outline-none focus:ring-0 focus:border-indigo-500 dark:focus:border-indigo-400"
+            className="peer block py-3 px-0 w-full pr-10 text-gray-900 dark:text-gray-100 bg-transparent border-0 border-b-2 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-0 focus:border-indigo-500 dark:focus:border-indigo-400"
             autoComplete="current-password"
           />
           <label
             htmlFor="currentPassword"
             className="absolute text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 origin-[0] peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100"
           >
-            Current Password (required to change password)
+            Current Password
           </label>
 
+          {/* Toggle visibility */}
+          <button
+            type="button"
+            onClick={() => setShowCurrent(!showCurrent)}
+            className="absolute right-2 top-3 text-gray-500 dark:text-gray-400"
+          >
+            {showCurrent ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+          </button>
+
+          {/* Verify button */}
           <button
             type="button"
             onClick={verifyCurrentPassword}
@@ -186,29 +201,54 @@ export default function Profile() {
           </button>
         </div>
 
-        {/* New Passwords */}
-        {["password", "confirmPassword"].map((field) => (
-          <div key={field} className="relative z-0 w-full group mt-6">
-            <input
-              type="password"
-              name={field}
-              id={field}
-              value={form[field]}
-              onChange={handleChange}
-              placeholder=" "
-              disabled={!passwordVerified}
-              autoComplete="new-password"
-              className="peer block py-3 px-0 w-full text-gray-900 dark:text-gray-100 bg-transparent border-0 border-b-2 border-gray-300 dark:border-gray-600 appearance-none focus:outline-none focus:ring-0 focus:border-indigo-500 dark:focus:border-indigo-400 disabled:opacity-50"
-            />
-            <label
-              htmlFor={field}
-              className="absolute text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 origin-[0] peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100"
-            >
-              {field === "confirmPassword" ? "Confirm New Password" : "New Password"}
-            </label>
-          </div>
-        ))}
+        {/* New Password & Confirm Password */}
+        {["password", "confirmPassword"].map((field) => {
+          const showState = field === "password" ? showNew : showConfirm;
+          const setShowState = field === "password" ? setShowNew : setShowConfirm;
 
+          return (
+            <motion.div
+              key={field}
+              initial={{ opacity: 0.5 }}
+              animate={{
+                opacity: passwordVerified ? 1 : 0.5,
+                y: passwordVerified ? 0 : 5,
+              }}
+              transition={{ duration: 0.3 }}
+              className="relative z-0 w-full group mt-6"
+            >
+              <div className="flex items-center gap-2">
+                <input
+                  type={showState ? "text" : "password"}
+                  name={field}
+                  id={field}
+                  value={form[field]}
+                  onChange={handleChange}
+                  placeholder=" "
+                  disabled={!passwordVerified}
+                  autoComplete="new-password"
+                  className="peer flex-1 block py-3 px-0 w-full pr-10 text-gray-900 dark:text-gray-100 bg-transparent border-0 border-b-2 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-0 focus:border-indigo-500 dark:focus:border-indigo-400 disabled:cursor-not-allowed"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowState(!showState)}
+                  disabled={!passwordVerified}
+                  className="absolute right-2 top-3 text-gray-500 dark:text-gray-400"
+                >
+                  {showState ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                </button>
+
+              </div>
+              <label
+                htmlFor={field}
+                className="absolute text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 origin-[0] peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100"
+              >
+                {field === "confirmPassword" ? "Confirm New Password" : "New Password"}
+              </label>
+            </motion.div>
+          );
+        })}
+        
         {/* Submit */}
         <button
           type="submit"
