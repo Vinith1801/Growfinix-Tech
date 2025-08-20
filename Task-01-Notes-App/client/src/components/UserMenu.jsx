@@ -1,6 +1,6 @@
 // src/components/UserMenu.jsx
 import { useState, useRef, useEffect } from "react";
-import { ChevronDownIcon, UserIcon, ArrowLeftOnRectangleIcon } from "@heroicons/react/24/outline";
+import { ChevronDownIcon, UserCircleIcon, ArrowLeftOnRectangleIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../auth/AuthContext";
 import { Link } from "react-router-dom";
 
@@ -32,7 +32,7 @@ export default function UserMenu() {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
       >
-        <UserIcon className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+        <UserCircleIcon className="w-6 h-6 text-gray-600 dark:text-gray-300" />
         <ChevronDownIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
       </button>
 
@@ -47,7 +47,7 @@ export default function UserMenu() {
               onClick={() => setOpen(false)}
               className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
-              <UserIcon className="w-4 h-4" />
+              <UserCircleIcon className="w-4 h-4" />
               Profile
             </Link>
 
